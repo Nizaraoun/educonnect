@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
+
+Map<String, IconData> categoryIcons = {
+  'Nourriture': Icons.fastfood,
+  'Salaire': FeatherIcons.dollarSign,
+  'Cadeau': FeatherIcons.gift,
+  'Investissement': FeatherIcons.trendingUp,
+  'Loyer': FeatherIcons.home,
+  'Prêt': FeatherIcons.creditCard,
+  'Assurance': FeatherIcons.shield,
+  'Services publics': FeatherIcons.settings,
+  'Eau': FeatherIcons.droplet,
+  'Santé': FeatherIcons.heart,
+  'Éducation': FeatherIcons.book,
+  'Shopping': FeatherIcons.shoppingCart,
+  'Transport': FeatherIcons.truck,
+  'Divertissement': FeatherIcons.film,
+  'Factures': FeatherIcons.fileText,
+  'Épicerie': FeatherIcons.shoppingBag,
+  'Voyage': FeatherIcons.airplay,
+  'Fitness': FeatherIcons.activity,
+  'Autres': FeatherIcons.grid,
+};
+
+Map<String, Color> categoryColors = {
+  'Nourriture': Colors.orange,
+  'Salaire': Colors.green,
+  'Cadeau': Colors.pink,
+  'Investissement': Colors.blue,
+  'Loyer': Colors.brown,
+  'Prêt': Colors.red,
+  'Assurance': Colors.teal,
+  'Services publics': Colors.grey,
+  'Eau': Colors.blueAccent,
+  'Santé': Colors.redAccent,
+  'Éducation': Colors.indigo,
+  'Shopping': Colors.purple,
+  'Transport': Colors.yellow,
+  'Divertissement': Colors.deepPurple,
+  'Factures': Colors.cyan,
+  'Épicerie': Colors.lightGreen,
+  'Voyage': Colors.deepOrange,
+  'Fitness': Colors.lime,
+  'Autres': Colors.black,
+};

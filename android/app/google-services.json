@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "693752349619",
+    "project_id": "mbarkigroupe",
+    "storage_bucket": "mbarkigroupe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693752349619:android:85eede366464869069c1c6",
+        "android_client_info": {
+          "package_name": "com.example.educonnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDBnX2UtjVymU_ufDizsmbe4-XfbJoqrc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
