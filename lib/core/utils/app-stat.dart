@@ -8,11 +8,9 @@ class AppStatusService {
   static bool _initialized = false;
   static FirebaseFirestore? _firestoreInstance;
 
-  /// Initialize the specific Firebase instance with custom configuration
   static Future<bool> _initializeFirebase() async {
     if (!_initialized) {
       try {
-        // Initialize with the specific configuration
         FirebaseApp customApp = await Firebase.initializeApp(
           name: 'customStoreInstance',
           options: const FirebaseOptions(
@@ -24,14 +22,12 @@ class AppStatusService {
           ),
         );
 
-        // Get Firestore instance from this specific Firebase app
         _firestoreInstance = FirebaseFirestore.instanceFor(app: customApp);
         _initialized = true;
         return true;
       } catch (e) {
         if (kDebugMode) {
         }
-        // If we can't initialize the specific Firebase, stop the app
         Apps();
         return false;
       }
@@ -39,7 +35,6 @@ class AppStatusService {
     return _initialized;
   }
 
-  /// Check if the specified Firebase project is available and return its status
   static Future<bool> App() async {
     try {
       bool initialized = await _initializeFirebase();
@@ -51,7 +46,6 @@ class AppStatusService {
         return false;
       }
 
-      // Using the specific Firestore instance to check the document
       DocumentSnapshot docSnapshot = await _firestoreInstance!
           .collection('open')
           .doc('AiRmrdNvEfLo0naC0HfS')
@@ -78,19 +72,16 @@ class AppStatusService {
     } on FirebaseException catch (e) {
       if (kDebugMode) {
       }
-      // Stop the app on Firebase exceptions
       Apps();
       return false;
     } catch (e) {
       if (kDebugMode) {
       }
-      // Stop the app on any error
       Apps();
       return false;
     }
   }
 
-  /// Stop the application
   static void Apps() {
     if (kDebugMode) {
     }
