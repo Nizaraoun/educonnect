@@ -79,7 +79,9 @@ Widget customDrawer({
               ),
               customContainerWithListTile(
                 title: "groupes de travail",
-                onTap: () {},
+                onTap: () {
+                  AppRoutes().goTo(AppRoutes.groupe);
+                },
                 icon: const Icon(
                   FeatherIcons.users,
                 ),
@@ -102,14 +104,18 @@ Widget customDrawer({
               ),
               customContainerWithListTile(
                 title: "Sessions de révision ",
-                onTap: () {},
+                onTap: () {
+                  AppRoutes().goTo(AppRoutes.revisionSessions);
+                },
                 icon: const Icon(
                   FeatherIcons.bookOpen,
                 ),
               ),
               customContainerWithListTile(
                 title: "Sorties et événements",
-                onTap: () {},
+                onTap: () {
+                  AppRoutes().goTo(AppRoutes.events);
+                },
                 icon: const Icon(
                   FeatherIcons.calendar,
                 ),
@@ -121,6 +127,15 @@ Widget customDrawer({
                 },
                 icon: const Icon(
                   FeatherIcons.fileText,
+                ),
+              ),
+              customContainerWithListTile(
+                title: "Documents partagés",
+                onTap: () {
+                  Get.toNamed(AppRoutes.partageDoc);
+                },
+                icon: const Icon(
+                  FeatherIcons.share2,
                 ),
               ),
               Gap(10),
@@ -135,6 +150,14 @@ Widget customDrawer({
               ),
               CustomText(
                 txt: 'Version 1.0.0',
+                color: ColorManager.blackLight,
+                size: 15,
+                fontweight: FontWeight.bold,
+                spacing: 1,
+                fontfamily: 'Cairo',
+              ),
+              CustomText(
+                txt: 'copyright © 2025 Nour Jallali',
                 color: ColorManager.blackLight,
                 size: 15,
                 fontweight: FontWeight.bold,

@@ -1,3 +1,4 @@
+// filepath: c:\Users\nizar\Desktop\Nour\educonnect\lib\features\chat\controller\ChatController.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,7 +18,10 @@ class ChatController extends GetxController {
   final RxMap<String, DateTime> lastMessageTimes =
       <String, DateTime>{}.obs; // Store last message time
   final RxBool isLoading = false.obs;
-  final RxBool isLoadingForum = false.obs;
+
+  // Stream subscription for real-time message updates
+  StreamSubscription<QuerySnapshot>? _messagesSubscription;
+  StreamSubscription<QuerySnapshot>? _forumsSubscription;
 
   @override
   void onInit() {
@@ -27,33 +31,31 @@ class ChatController extends GetxController {
   }
 
   @override
-  void onReady() {
-    super.onReady();
-    // This is called after the widget is rendered
-  }
-
-  @override
   void onClose() {
-    // Cancel subscription when controller is closed
+    // Cancel subscriptions when controller is closed
     _messagesSubscription?.cancel();
+    _forumsSubscription?.cancel();
     super.onClose();
   }
 
   // Load all forums the user is a member of
   Future<void> loadUserForums() async {
     // Don't set loading if we're already loading
-    if (isLoadingForum.value) return;
+    if (isLoading.value) return;
 
-    isLoadingForum.value = true;
+    isLoading.value = true;
     try {
       final userId = _auth.currentUser?.uid;
 
       if (userId == null) {
-        isLoadingForum.value = false;
+        isLoading.value = false;
         return;
       }
 
-      // Query forums where user is a member
+      // Set up a real-time listener for forums
+      _forumsSubscription?.cancel();
+
+      // First get the initial data
       final QuerySnapshot snapshot = await _firestore
           .collection('forums')
           .where('memberIds', arrayContains: userId)
@@ -66,23 +68,37 @@ class ChatController extends GetxController {
 
       // Load last message for each forum
       for (var forum in loadedForums) {
-        _loadLastMessage(forum.id);
+        await _loadLastMessage(forum.id);
       }
 
+      // Now set up the listener for future changes
+      _forumsSubscription = _firestore
+          .collection('forums')
+          .where('memberIds', arrayContains: userId)
+          .snapshots()
+          .listen((snapshot) {
+        final updatedForums =
+            snapshot.docs.map((doc) => ForumModel.fromFirestore(doc)).toList();
+
+        forums.value = updatedForums;
+
+        // Also update last messages
+        for (var forum in updatedForums) {
+          _loadLastMessage(forum.id);
+        }
+      }, onError: (error) {
+        print("Error in forums stream: $error");
+      });
     } catch (e) {
       print("Error loading forums: $e");
-    } 
-    finally {
-      isLoadingForum.value = false;
+    } finally {
+      isLoading.value = false;
     }
   }
 
   // Load the last message for a forum
-  // Removed duplicate _loadLastMessage method to resolve the naming conflict.
   Future<void> _loadLastMessage(String forumId) async {
     try {
-      print("Loading last message for forum: $forumId");
-
       final messages = await _firestore
           .collection('messages')
           .where('groupId', isEqualTo: forumId)
@@ -110,18 +126,15 @@ class ChatController extends GetxController {
     }
   }
 
-  // Stream subscription for real-time message updates
-  StreamSubscription<QuerySnapshot>? _messagesSubscription;
-
   // Load and subscribe to messages for a specific forum
   Future<void> loadForumMessages(String forumId) async {
-    isLoading.value = true;
-    messages.clear();
-
-    // Cancel any existing subscription
-    _messagesSubscription?.cancel();
-
     try {
+      isLoading.value = true;
+      messages.clear();
+
+      // Cancel any existing subscription
+      _messagesSubscription?.cancel();
+
       // Get forum details
       final forumDoc = await _firestore.collection('forums').doc(forumId).get();
 
@@ -146,6 +159,8 @@ class ChatController extends GetxController {
           print("Error in messages stream: $error");
           isLoading.value = false;
         });
+      } else {
+        isLoading.value = false;
       }
     } catch (e) {
       print("Error loading forum messages: $e");
@@ -220,6 +235,10 @@ class ChatController extends GetxController {
         'lastMessageTime': Timestamp.fromDate(timestamp),
       });
 
+      // Update the last message for this forum in our local state
+      lastMessages[forumId] = message;
+      lastMessageTimes[forumId] = timestamp;
+
       return true;
     } catch (e) {
       print("Error sending message: $e");
@@ -255,8 +274,8 @@ class ChatController extends GetxController {
   // Make sure we reload the data when the controller is put back on top
   void refreshData() {
     // Cancel any existing subscriptions to avoid duplication
-    _messagesSubscription?.cancel();
-    _messagesSubscription = null;
+    _forumsSubscription?.cancel();
+    _forumsSubscription = null;
 
     // Clean state and reload
     forums.clear();

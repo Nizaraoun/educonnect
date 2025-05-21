@@ -52,7 +52,7 @@ class _ConversationState extends State<Conversation> {
                           child: CustomIconButton(
                               icon: const Icon(Icons.arrow_back_ios_rounded),
                               onPressed: () {
-                                Get.back();
+                                AppRoutes().goToEnd(AppRoutes.dashboard);
                               },
                               color: ColorManager.primaryColor,
                               style: ButtonStyle(
@@ -73,6 +73,17 @@ class _ConversationState extends State<Conversation> {
                                   VisualDensity.adaptivePlatformDensity,
                               autofocus: true,
                               splashRadius: 4),
+                        ),
+                        const Spacer(),
+                        CustomIconButton(
+                          icon: const Icon(Icons.notifications),
+                          onPressed: () {},
+                          color: ColorManager.white,
+                          tooltip: "Notification",
+                          iconSize: Get.width / 14,
+                          alignment: Alignment.centerRight,
+                          visualDensity: VisualDensity.adaptivePlatformDensity,
+                          autofocus: true,
                         ),
                       ],
                     ),
@@ -118,16 +129,13 @@ class _ConversationState extends State<Conversation> {
                     ),
                   ),
                   child: Obx(() {
-                    if (chatController.isLoadingForum.value) {
-                      print(chatController.isLoadingForum.value);
+                    if (chatController.isLoading.value) {
                       return const Center(
                         child: CircularProgressIndicator(),
                       );
                     }
 
-                    if (chatController.forums.isEmpty &&
-                        !chatController.isLoadingForum.value) {
-                      print(chatController.forums.isEmpty);
+                    if (chatController.forums.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -149,12 +157,16 @@ class _ConversationState extends State<Conversation> {
                         ),
                       );
                     }
+
                     return ListView.builder(
                         itemCount: chatController.forums.length,
                         itemBuilder: (context, index) {
-                          print(chatController.forums[index].groupName);
-                          print(chatController.forums[index].id);
                           final forum = chatController.forums[index];
+                          final lastMessage =
+                              chatController.lastMessages[forum.id] ??
+                                  "Pas de messages";
+                          final lastMessageTime =
+                              chatController.lastMessageTimes[forum.id];
 
                           return GestureDetector(
                               onTap: () {
@@ -190,16 +202,11 @@ class _ConversationState extends State<Conversation> {
                                   fontweight: FontWeight.w600,
                                   spacing: 0,
                                 ),
-                                subtitle: CustomText(
-                                  txt: "Groupe de discussion",
-                                  color: ColorManager.darkGrey,
-                                  size: Get.width / 26,
-                                  fontweight: FontWeight.normal,
-                                  spacing: 0,
-                                ),
-                                // Display only the members count
-                                trailing:
-                                    Text("${forum.memberIds.length} membres"),
+                                subtitle: Text(lastMessage),
+                                // Display the last message time or members count
+                                trailing: lastMessageTime != null
+                                    ? Text(_formatTime(lastMessageTime))
+                                    : Text("${forum.memberIds.length} membres"),
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 8),
                               ));

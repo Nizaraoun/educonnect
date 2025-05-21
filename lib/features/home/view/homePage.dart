@@ -345,7 +345,7 @@ class HomePage extends StatelessWidget {
                       title: 'messagerie',
                       icon: FeatherIcons.messageCircle,
                       onTap: () {
-                        AppRoutes().goTo(AppRoutes.groupe);
+                        AppRoutes().goTo(AppRoutes.messaging);
                       },
                     ),
 
@@ -357,13 +357,6 @@ class HomePage extends StatelessWidget {
                       textStyle: StylesManager.headline2,
                     ),
                     const Gap(35), // Forum de discussion
-                    _buildFeatureCard(
-                      title: 'Forum',
-                      icon: FeatherIcons.users,
-                      onTap: () {
-                        // Navigate to forum screen
-                      },
-                    ),
 
                     // Groupes par filière
                     _buildFeatureCard(
@@ -373,24 +366,14 @@ class HomePage extends StatelessWidget {
                         AppRoutes().goTo(AppRoutes.majorGroups);
                       },
                     ),
-
+                    _buildFeatureCard(
+                      title: 'Documents Partagés',
+                      icon: FeatherIcons.share2,
+                      onTap: () {
+                        AppRoutes().goTo(AppRoutes.partageDoc);
+                      },
+                    ),
                     // Système Q&A
-                    _buildFeatureCard(
-                      title: '(Q&A)',
-                      icon: FeatherIcons.helpCircle,
-                      onTap: () {
-                        // Navigate to Q&A screen
-                      },
-                    ),
-
-                    // Chat en direct
-                    _buildFeatureCard(
-                      title: 'Chat',
-                      icon: FeatherIcons.messageSquare,
-                      onTap: () {
-                        // Navigate to live chat screen
-                      },
-                    ),
                   ],
                 ),
               ),

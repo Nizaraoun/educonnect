@@ -97,7 +97,9 @@ class _DocumentScreenState extends State<DocumentScreen>
       title: Text(
         _controller.selectedFolderId.isEmpty
             ? 'Mes Documents'
-            : 'Contenu du Dossier',
+            : _controller.isShowingSharedDocs.value
+                ? 'Documents Partagés'
+                : 'Contenu du Dossier',
         style: const TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 18,
@@ -391,8 +393,19 @@ class _DocumentScreenState extends State<DocumentScreen>
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
-                itemCount: _controller.folders.length,
+                // Add +1 to show the special shared documents folder
+                itemCount: _controller.folders.length + 1,
                 itemBuilder: (context, index) {
+                  // If it's the last item, it's our shared documents folder
+                  if (index == _controller.folders.length) {
+                    return FadeInUp(
+                      preferences: const AnimationPreferences(
+                        offset: Duration(milliseconds: 50),
+                      ),
+                      child: _buildSharedDocumentsFolder(),
+                    );
+                  }
+
                   final folder = _controller.folders[index];
                   return FadeInUp(
                     preferences: const AnimationPreferences(
@@ -533,6 +546,11 @@ class _DocumentScreenState extends State<DocumentScreen>
   }
 
   Widget _buildFolderDocuments() {
+    // Check if we're showing the special shared documents folder
+    if (_controller.selectedFolderId.value == 'partagedoc') {
+      return _buildSharedDocumentsView();
+    }
+
     // Header with back button and folder name
     final selectedFolder = _controller.folders.firstWhere(
       (folder) => folder.id == _controller.selectedFolderId.value,
@@ -687,7 +705,7 @@ class _DocumentScreenState extends State<DocumentScreen>
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                           ),
@@ -795,6 +813,12 @@ class _DocumentScreenState extends State<DocumentScreen>
                     onTap: () {
                       Get.to(() => DocumentViewerScreen(document: document));
                     },
+                  ),
+                  const Gap(8),
+                  _buildDocumentActionButton(
+                    icon: FeatherIcons.share2,
+                    color: Colors.blue,
+                    onTap: () => _showShareDocumentDialog(document),
                   ),
                   const Gap(8),
                   _buildDocumentActionButton(
@@ -924,6 +948,273 @@ class _DocumentScreenState extends State<DocumentScreen>
 
   void _showRenameFolderDialog(FolderModel folder) {
     _folderNameController.text = folder.name;
+    Get.dialog(Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              FeatherIcons.edit2,
+              size: 40,
+              color: Colors.blue,
+            ),
+            const Gap(16),
+            Text(
+              'Renommer le Dossier',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: ColorManager.SoftBlack,
+              ),
+            ),
+            const Gap(20),
+            TextField(
+              controller: _folderNameController,
+              decoration: InputDecoration(
+                hintText: 'Nouveau Nom du Dossier',
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                prefixIcon: Icon(
+                  FeatherIcons.folder,
+                  color: Colors.blue,
+                ),
+              ),
+              autofocus: true,
+            ),
+            const Gap(24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[600],
+                  ),
+                  child: const Text('Annuler'),
+                ),
+                const Gap(8),
+                ElevatedButton(
+                  onPressed: () {
+                    // Implement rename functionality
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Renommer'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ));
+  }
+
+  void _showDeleteFolderDialog(FolderModel folder) {
+    Get.dialog(Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              FeatherIcons.alertTriangle,
+              size: 40,
+              color: Colors.orange,
+            ),
+            const Gap(16),
+            Text(
+              'Supprimer le Dossier',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: ColorManager.SoftBlack,
+              ),
+            ),
+            const Gap(12),
+            Text(
+              'Êtes-vous sûr de vouloir supprimer "${folder.name}" ?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const Gap(8),
+            Text(
+              'Cela supprimera également tous les fichiers qu\'il contient.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
+            ),
+            const Gap(24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey[600],
+                      side: BorderSide(color: Colors.grey[300]!),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Annuler'),
+                  ),
+                ),
+                const Gap(12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _controller.deleteFolder(folder);
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Supprimer'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ));
+  }
+
+  void _showDeleteDocumentDialog(DocumentFileModel document) {
+    Get.dialog(Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              FeatherIcons.alertTriangle,
+              size: 40,
+              color: Colors.orange,
+            ),
+            const Gap(16),
+            Text(
+              'Supprimer le Document',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: ColorManager.SoftBlack,
+              ),
+            ),
+            const Gap(12),
+            Text(
+              'Êtes-vous sûr de vouloir supprimer "${document.name}" ?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const Gap(8),
+            Text(
+              'Cette action ne peut pas être annulée.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
+            ),
+            const Gap(24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey[600],
+                      side: BorderSide(color: Colors.grey[300]!),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Annuler'),
+                  ),
+                ),
+                const Gap(12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _controller.deleteDocument(document);
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('Supprimer'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ));
+  }
+
+  void _showShareDocumentDialog(DocumentFileModel document) {
+    // Clear previous code if any
+    _controller.invitationCodeController.clear();
+
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -939,24 +1230,33 @@ class _DocumentScreenState extends State<DocumentScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                FeatherIcons.edit2,
+                FeatherIcons.share2,
                 size: 40,
                 color: Colors.blue,
               ),
               const Gap(16),
               Text(
-                'Renommer le Dossier',
+                'Partager le Document',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: ColorManager.SoftBlack,
                 ),
               ),
+              const Gap(12),
+              Text(
+                'Partagez "${document.name}" en utilisant un code d\'invitation',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
               const Gap(20),
               TextField(
-                controller: _folderNameController,
+                controller: _controller.invitationCodeController,
                 decoration: InputDecoration(
-                  hintText: 'Nouveau Nom du Dossier',
+                  hintText: 'Code d\'invitation',
                   filled: true,
                   fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
@@ -964,39 +1264,389 @@ class _DocumentScreenState extends State<DocumentScreen>
                     borderSide: BorderSide.none,
                   ),
                   prefixIcon: Icon(
-                    FeatherIcons.folder,
-                    color: Colors.blue,
+                    FeatherIcons.key,
+                    color: ColorManager.primaryColor,
                   ),
                 ),
                 autofocus: true,
               ),
+              const Gap(8),
+              Text(
+                'Entrez le code d\'invitation de l\'utilisateur avec qui vous souhaitez partager ce document',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
               const Gap(24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.grey[600],
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[600],
+                        side: BorderSide(color: Colors.grey[300]!),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Annuler'),
                     ),
-                    child: const Text('Annuler'),
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: Obx(() => ElevatedButton(
+                          onPressed: _controller.isSharing.value
+                              ? null
+                              : () => _controller.shareDocument(
+                                    document,
+                                    _controller.invitationCodeController.text,
+                                  ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: ColorManager.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _controller.isSharing.value
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Partager'),
+                        )),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    String _formatDate(DateTime date) {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  }
+
+  Widget _buildSharedDocumentsFolder() {
+    return GestureDetector(
+      onTap: () => _controller.showSharedDocuments(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: ColorManager.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    FeatherIcons.share2,
+                    size: 40,
+                    color: ColorManager.primaryColor,
+                  ),
+                ],
+              ),
+            ),
+            const Gap(12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                'Documents Partagés',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: ColorManager.SoftBlack,
+                ),
+              ),
+            ),
+            const Gap(4),
+            Obx(() {
+              final count = _controller.sharedDocuments.length;
+              return Text(
+                '$count ${count == 1 ? 'document' : 'documents'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSharedDocumentsView() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: () {
+                  _controller.goBackFromSharedDocuments();
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: ColorManager.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    FeatherIcons.arrowLeft,
+                    size: 18,
+                    color: ColorManager.primaryColor,
+                  ),
+                ),
+              ),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Documents Partagés',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: ColorManager.SoftBlack,
+                      ),
+                    ),
+                    Text(
+                      'Documents partagés avec vous',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: ColorManager.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Obx(() => Text(
+                      '${_controller.sharedDocuments.length} ${_controller.sharedDocuments.length == 1 ? 'document' : 'documents'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: ColorManager.primaryColor,
+                      ),
+                    )),
+              ),
+            ],
+          ),
+        ),
+
+        // Documents list
+        Expanded(
+          child: Obx(() {
+            if (_controller.sharedDocuments.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          FeatherIcons.share2,
+                          size: 80,
+                          color: ColorManager.primaryColor.withOpacity(0.7),
+                        ),
+                        const Gap(20),
+                        Text(
+                          'Aucun document partagé',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: ColorManager.SoftBlack,
+                          ),
+                        ),
+                        const Gap(8),
+                        Text(
+                          'Vous n\'avez pas encore reçu de documents partagés',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _controller.sharedDocuments.length,
+              itemBuilder: (context, index) {
+                final document = _controller.sharedDocuments[index];
+                return _buildDocumentListItem(document);
+              },
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentListItem(DocumentFileModel document) {
+    final bool isPdf = document.type == 'pdf';
+    final iconColor = isPdf ? Colors.red : Colors.blue;
+    final bgColor =
+        isPdf ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          Get.to(() => DocumentViewerScreen(document: document));
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    isPdf ? FeatherIcons.fileText : FeatherIcons.image,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+              ),
+              const Gap(16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      document.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: ColorManager.SoftBlack,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Gap(4),
+                    Text(
+                      'Ajouté ${_formatTimeAgo(document.createdAt)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildDocumentActionButton(
+                    icon: FeatherIcons.eye,
+                    color: Colors.teal,
+                    onTap: () {
+                      Get.to(() => DocumentViewerScreen(document: document));
+                    },
                   ),
                   const Gap(8),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Implement rename functionality
-                      Get.back();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Renommer'),
+                  _buildDocumentActionButton(
+                    icon: FeatherIcons.share2,
+                    color: Colors.blue,
+                    onTap: () => _showShareDocumentDialog(document),
+                  ),
+                  const Gap(8),
+                  _buildDocumentActionButton(
+                    icon: FeatherIcons.trash2,
+                    color: Colors.red,
+                    onTap: () => _showDeleteDocumentDialog(document),
                   ),
                 ],
               ),
@@ -1005,195 +1655,5 @@ class _DocumentScreenState extends State<DocumentScreen>
         ),
       ),
     );
-  }
-
-  void _showDeleteFolderDialog(FolderModel folder) {
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                FeatherIcons.alertTriangle,
-                size: 40,
-                color: Colors.orange,
-              ),
-              const Gap(16),
-              Text(
-                'Supprimer le Dossier',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: ColorManager.SoftBlack,
-                ),
-              ),
-              const Gap(12),
-              Text(
-                'Êtes-vous sûr de vouloir supprimer "${folder.name}" ?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const Gap(8),
-              Text(
-                'Cela supprimera également tous les fichiers qu\'il contient.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              const Gap(24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Get.back(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[600],
-                        side: BorderSide(color: Colors.grey[300]!),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Annuler'),
-                    ),
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _controller.deleteFolder(folder);
-                        Get.back();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Supprimer'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDeleteDocumentDialog(DocumentFileModel document) {
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                FeatherIcons.alertTriangle,
-                size: 40,
-                color: Colors.orange,
-              ),
-              const Gap(16),
-              Text(
-                'Supprimer le Document',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: ColorManager.SoftBlack,
-                ),
-              ),
-              const Gap(12),
-              Text(
-                'Êtes-vous sûr de vouloir supprimer "${document.name}" ?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const Gap(8),
-              Text(
-                'Cette action ne peut pas être annulée.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-              const Gap(24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Get.back(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[600],
-                        side: BorderSide(color: Colors.grey[300]!),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Annuler'),
-                    ),
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _controller.deleteDocument(document);
-                        Get.back();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text('Supprimer'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

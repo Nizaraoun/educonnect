@@ -17,6 +17,23 @@ class DocumentService {
   // Get current user ID
   String? get currentUserId => _auth.currentUser?.uid;
 
+  // Get user name by ID
+  Future<String> getUserNameById(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        final String firstName = userData?['firstName'] ?? '';
+        final String lastName = userData?['lastName'] ?? '';
+        return '$firstName $lastName'.trim();
+      }
+      return 'Utilisateur inconnu';
+    } catch (e) {
+      print('Error getting user name: $e');
+      return 'Utilisateur inconnu';
+    }
+  }
+
   // Create a new folder
   Future<FolderModel?> createFolder(String folderName) async {
     try {
@@ -207,6 +224,56 @@ class DocumentService {
     }
   }
 
+  // Share a document with a user who has the invitation code
+  Future<bool> shareDocumentWithInvitationCode(
+      DocumentFileModel document, String invitationCode) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null)
+        return false; // Find the user with this invitation code
+      final userQuerySnapshot = await _firestore
+          .collection('invitations')
+          .where('code', isEqualTo: invitationCode)
+          .limit(1)
+          .get();
+
+      if (userQuerySnapshot.docs.isEmpty) {
+        return false; // No user found with this invitation code
+      }
+
+      // Extract the userId field from the invitation document
+      final targetUserId =
+          userQuerySnapshot.docs.first.data()['userId'] as String;
+
+      // Don't share with yourself
+      if (targetUserId == userId) {
+        return false;
+      }
+
+      // Create a shared document record
+      final sharedDocId = const Uuid().v4();
+      final sharedDocData = {
+        'originalDocumentId': document.id,
+        'sharedByUserId': userId,
+        'sharedWithUserId': targetUserId,
+        'documentUrl': document.url,
+        'documentName': document.name,
+        'documentType': document.type,
+        'sharedAt': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore
+          .collection('sharedDocuments')
+          .doc(sharedDocId)
+          .set(sharedDocData);
+
+      return true;
+    } catch (e) {
+      print('Error sharing document: $e');
+      return false;
+    }
+  }
+
   // Helper method to display the index creation link if needed
   void showIndexCreationHelp() {
     Get.dialog(
@@ -236,5 +303,50 @@ class DocumentService {
         ],
       ),
     );
+  }
+
+  // Get shared documents for current user
+  Stream<List<DocumentFileModel>> getSharedDocuments() {
+    final userId = currentUserId;
+    if (userId == null) {
+      return Stream.value([]);
+    }
+
+    try {
+      return _firestore
+          .collection('sharedDocuments')
+          .where('sharedWithUserId', isEqualTo: userId)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          // Convert the shared document data to DocumentFileModel
+          final data = doc.data();
+          return DocumentFileModel(
+            id: doc.id,
+            name: data['documentName'] as String,
+            url: data['documentUrl'] as String,
+            type: data['documentType'] as String,
+            folderId: 'partagedoc', // Special folder ID for shared docs
+            userId: userId,
+            createdAt:
+                (data['sharedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            sharedBy: data['sharedByUserId'] as String,
+            originalDocumentId: data['originalDocumentId'] as String,
+          );
+        }).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      });
+    } catch (e) {
+      print('Error getting shared documents: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load shared documents.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.7),
+        colorText: Colors.white,
+        duration: Duration(seconds: 5),
+      );
+      return Stream.value([]);
+    }
   }
 }

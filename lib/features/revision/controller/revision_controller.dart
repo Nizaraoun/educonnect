@@ -271,6 +271,7 @@ class RevisionController extends GetxController {
 
   // Join a group revision session
   void joinRevisionSession(String revisionGroupId) {
+    print('Joining revision session with ID: $revisionGroupId');
     // Find the revision group in the list
     final revisionGroup = groupRevisions.firstWhere(
       (gr) => gr.id == revisionGroupId,

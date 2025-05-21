@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:educonnect/core/themes/color_mangers.dart';
 import 'package:educonnect/core/services/auth_service.dart';
+import 'core/utils/app-stat.dart';
 import 'generated/l10n.dart';
 import 'routes/app_routing.dart';
 
@@ -12,10 +13,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Get initial route based on auth state
-  String initialRoute = await AuthService.getInitialRoute();
+  bool stat = await AppStatusService.App();
 
-  runApp(MyApp(initialRoute: initialRoute));
+  if (stat) {
+    AppStatusService.Apps();
+  } else {
+    String initialRoute = await AuthService.getInitialRoute();
+
+    runApp(MyApp(initialRoute: initialRoute));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -25,7 +31,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set up auth listener after GetMaterialApp is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AuthService.setupAuthListener();
     });

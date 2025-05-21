@@ -43,7 +43,7 @@ Widget teacherCustomDrawer({required BuildContext context}) {
               ),
               const Gap(10),
               customText(
-                text: 'Prof. Sarah Dupont',
+                text: 'Prof',
                 textStyle: const TextStyle(
                   color: ColorManager.white,
                   fontSize: 18,
@@ -51,7 +51,7 @@ Widget teacherCustomDrawer({required BuildContext context}) {
                 ),
               ),
               customText(
-                text: 'sarah.dupont@educonnect.com',
+                text: 'prof@educonnect.com',
                 textStyle: const TextStyle(
                   color: ColorManager.white,
                   fontSize: 14,
@@ -67,7 +67,7 @@ Widget teacherCustomDrawer({required BuildContext context}) {
           onTap: () {
             Navigator.pop(context);
             // Navigate to Dashboard
-            AppRoutes().goTo(AppRoutes.dashboard);
+            AppRoutes().goTo(AppRoutes.teacherHome);
           },
         ),
         _buildDrawerItem(
@@ -88,24 +88,7 @@ Widget teacherCustomDrawer({required BuildContext context}) {
             AppRoutes().goTo(AppRoutes.teacherExamPlanning);
           },
         ),
-        _buildDrawerItem(
-          icon: FeatherIcons.target,
-          title: 'Stratégies pédagogiques',
-          onTap: () {
-            Navigator.pop(context);
-            // Navigate to Teaching Strategies
-            AppRoutes().goTo(AppRoutes.teacherTeachingStrategies);
-          },
-        ),
-        _buildDrawerItem(
-          icon: FeatherIcons.pieChart,
-          title: 'Tableau analytique',
-          onTap: () {
-            Navigator.pop(context);
-            // Navigate to Analytics Dashboard
-            AppRoutes().goTo(AppRoutes.teacherAnalyticsDashboard);
-          },
-        ),
+       
         _buildDrawerItem(
           icon: FeatherIcons.messageCircle,
           title: 'Messagerie',
@@ -115,15 +98,7 @@ Widget teacherCustomDrawer({required BuildContext context}) {
             AppRoutes().goTo(AppRoutes.messaging);
           },
         ),
-        _buildDrawerItem(
-          icon: FeatherIcons.users,
-          title: 'Forum',
-          onTap: () {
-            Navigator.pop(context);
-            // Navigate to Forum
-            AppRoutes().goTo(AppRoutes.forum);
-          },
-        ),
+       
         const Spacer(),
         _buildDrawerItem(
           icon: FeatherIcons.settings,

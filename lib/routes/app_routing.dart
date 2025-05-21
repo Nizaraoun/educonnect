@@ -6,6 +6,7 @@ import 'package:educonnect/features/authentification/signup/signup.dart';
 import 'package:educonnect/features/events/view/events_screen.dart';
 import 'package:educonnect/features/groupe/controller/group_controller.dart';
 import 'package:educonnect/features/settings/view/profileDetails.dart';
+import 'package:educonnect/features/partagedoc/view/partagedoc.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../feature-teacher/exam_planning/view/exam_planning_screen.dart';
@@ -39,6 +40,7 @@ class AppRoutes {
       '/revisionSessions'; // Planification des sessions de révision
   static const events = '/events'; // Organisation des sorties et événements
   static const documentSharing = '/documentSharing'; // Partage de documents
+  static const partageDoc = '/partageDoc'; // Documents partagés
   static const messaging = '/messaging'; // Messagerie et notifications
   static const groupe = '/Groupe'; // Gestion des groupes de travail
   static const forum = '/forum'; // Forum de discussion
@@ -49,13 +51,13 @@ class AppRoutes {
 
   static const settings = '/settings';
   static const notifications = '/notifications';
+  static const partagedoc = '/partagedoc';
 
   // Define the app routes mta3 el prof
   static const teacherHome = '/teacherHome';
   static const teacherCourseManagement = '/teacherCourseManagement';
   static const teacherExamPlanning = '/teacherExamPlanning';
   static const teacherTeachingStrategies = '/teacherTeachingStrategies';
-  static const teacherAnalyticsDashboard = '/teacherAnalyticsDashboard';
   static const teacherMessaging = '/teacherMessaging';
   static const majorGroups = '/majorGroups'; // Groupes par majeur
 
@@ -177,6 +179,13 @@ class AppRoutes {
     GetPage(
       name: AppRoutes.documentSharing,
       page: () => const DocumentScreen(), // Page de partage de documents
+      transition: Transition.fadeIn,
+      curve: Curves.easeIn,
+      transitionDuration: Duration(milliseconds: 500),
+    ),
+    GetPage(
+      name: AppRoutes.partageDoc,
+      page: () => const PartageDocScreen(), // Page de documents partagés
       transition: Transition.fadeIn,
       curve: Curves.easeIn,
       transitionDuration: Duration(milliseconds: 500),

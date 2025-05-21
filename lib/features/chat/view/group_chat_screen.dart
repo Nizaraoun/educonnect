@@ -43,6 +43,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _loadMessages() async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
     });
@@ -52,17 +54,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       await chatController.loadForumMessages(widget.forumId);
     } catch (e) {
       print("Error loading messages: $e");
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les messages',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.7),
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        Get.snackbar(
+          'Erreur',
+          'Impossible de charger les messages',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withOpacity(0.7),
+          colorText: Colors.white,
+        );
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
 
     // Scroll to bottom after messages load
